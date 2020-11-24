@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/google/uuid"
 	"html/template"
@@ -12,23 +13,39 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 )
 
 type Page struct {
-	Content string
-	Pasteid string
+	Content   string
+	Pasteid   string
+	Url       string
+	TimeStart string
+	TimeStop  string
 }
 
-var TmpDir string
+var (
+	Dir    *string
+	TmpDir string
+	Port   *int
+	Css    string
+)
 
-func loadPaste(pasteid string)(*Page, error) {
-    content, err := ioutil.ReadFile(filepath.Join(TmpDir, pasteid))
+func loadPaste(pasteid string) (*Page, error) {
+	content, err := ioutil.ReadFile(filepath.Join(TmpDir, pasteid))
 	if err != nil {
 		return nil, err
 	}
-    return &Page{Content: string(content), Pasteid: pasteid}, nil
+	datas := strings.SplitN(string(content), "\n", 2)
+	times := strings.SplitN(datas[0], "|", 2)
+	return &Page{
+		Content:   datas[1],
+		Pasteid:   pasteid,
+		TimeStart: times[0],
+		TimeStop:  times[1],
+	}, nil
 }
 
 func rawHandler(w http.ResponseWriter, r *http.Request) {
@@ -37,11 +54,13 @@ func rawHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusFound)
 		return
 	}
-	f, err := os.Open(filepath.Join(TmpDir, pasteid))
+	content, err := ioutil.ReadFile(filepath.Join(TmpDir, pasteid))
 	if err != nil {
 		fmt.Fprintf(w, "Not found :/")
 	} else {
-		io.Copy(w, f)
+		datas := strings.SplitN(string(content), "\n", 2)
+		s := strings.NewReader(datas[1])
+		io.Copy(w, s)
 	}
 }
 
@@ -52,13 +71,15 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Printf("Searching: %s", pasteid)
-    paste, err := loadPaste(pasteid)
+	paste, err := loadPaste(pasteid)
 	if err != nil {
 		fmt.Fprintf(w, "Not found :/")
 	} else {
-        t, _ := template.New("view").Parse(VIEW)
-        t.Execute(w, paste)
-    }
+		t, _ := template.New("view").Parse(VIEW)
+		paste.Url = r.Host
+		fmt.Println(paste.Url)
+		t.Execute(w, paste)
+	}
 }
 
 func removePaste(paste string) {
@@ -71,6 +92,11 @@ func removePaste(paste string) {
 func addPaste(body, pasteid string, eol int) {
 	fmt.Printf("addPaste called: %s - %s\n", pasteid, body)
 	tmpfn := filepath.Join(TmpDir, pasteid)
+	t := time.Now()
+	tf := t.Add(time.Duration(eol) * time.Minute)
+	body = fmt.Sprintf("%s|%s\n",
+		t.Format("2006-01-02 15:03:00"),
+		tf.Format("2006-01-02 15:03:00")) + body
 	err := ioutil.WriteFile(tmpfn, []byte(body), 0600)
 	if err != nil {
 		fmt.Println("Cannot write file.", err)
@@ -101,14 +127,31 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/view/"+pasteid.String(), http.StatusFound)
 }
 
+func cssHandler(w http.ResponseWriter, r *http.Request) {
+	cssReader := strings.NewReader(Css)
+	w.Header().Set("Content-Type", "text/css; charset=utf-8")
+	io.Copy(w, cssReader)
+}
+
 func handler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, INDEX)
 }
 
-func main() {
-	tmpdir, err := ioutil.TempDir("/tmp/", "*.paste")
+func LoadCss() {
+	css, err := ioutil.ReadFile("css/bootstrap.min.css")
 	if err != nil {
-		log.Fatal(err)
+		log.Println("Cannot read CSS file", err)
+	}
+	Css = string(css)
+}
+
+func main() {
+	Dir = flag.String("dir", "/tmp/", "Directory where temporary dir will be created and received paste file")
+	Port = flag.Int("port", 8000, "Listening port")
+
+	tmpdir, err := ioutil.TempDir(*Dir, "*.paste")
+	if err != nil {
+		log.Panic(err)
 	}
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -119,10 +162,11 @@ func main() {
 		os.Exit(0)
 	}()
 	TmpDir = tmpdir
+	LoadCss()
 	http.HandleFunc("/", handler)
 	http.HandleFunc("/view/", viewHandler)
 	http.HandleFunc("/raw/", rawHandler)
 	http.HandleFunc("/create", createHandler)
-    //TODO handle CSS file...
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	http.HandleFunc("/css/", cssHandler)
+	log.Panic(http.ListenAndServe(fmt.Sprintf(":%d", *Port), nil))
 }

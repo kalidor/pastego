@@ -12,8 +12,7 @@ const INDEX = `<!DOCTYPE html>
 
         <title>PasteGo - Create paste</title>
 
-        <!--link href="/assets/stylesheets/bootstrap.min.css" rel="stylesheet">
-        <link href="/assets/stylesheets/sticky-footer.css" rel="stylesheet"-->
+        <link href="/css/bootstrap.min.css" rel="stylesheet">
 
     </head>
     <body>
@@ -31,7 +30,6 @@ const INDEX = `<!DOCTYPE html>
     
         <textarea name="content" class="form-control" rows="20"></textarea>
         <br />
-        <button type="submit" class="btn btn-default pull-right">Create</button>
         <div class="col-sm-2 pull-right">
             <select name="eol" class="form-control" id="eol">
                 <option value="10">10 min</option>
@@ -44,6 +42,7 @@ const INDEX = `<!DOCTYPE html>
                 <option value="21600">15 j</option>
                 <option value="43200">30 j</option>
             </select>
+        <button type="submit" class="btn btn-default pull-right">Create</button>
         </div>
 </form>
         </div>
@@ -68,8 +67,8 @@ const VIEW = `
 
         <title>PasteGo - Create paste</title>
 
-        <!--link href="/assets/stylesheets/bootstrap.min.css" rel="stylesheet">
-        <link href="/assets/stylesheets/sticky-footer.css" rel="stylesheet"-->
+        <link href="/css/bootstrap.min.css" rel="stylesheet">
+        <link href="/css/sticky-footer.css" rel="stylesheet">
 
     </head>
     <body>
@@ -78,12 +77,14 @@ const VIEW = `
                 <a class="h1" href="/">PasteGo</a>
             </div>
             
+                <div class="row">
+        <div class="col-md-4"><strong>Posted at </strong>{{ .TimeStart }}</div>
+        <div class="col-md-4"><strong>Ends at </strong>{{ .TimeStop }}</div>
+        <div class="col-md-4"><strong>Raw </strong><a href="http://{{ .Url }}/raw/{{ .Pasteid }}">{{ .Pasteid }}</a></div>
+    </div>
+    <br />
             
-            <p>{{ .Pasteid }}</p>
-    
-     
-
-        <textarea name="content" class="form-control" rows="20">{{ .Content}}</textarea>
+        <pre>{{ .Content}}</pre>
         <br />
 
         </div>
