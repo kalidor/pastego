@@ -26,7 +26,7 @@ const INDEX = `<!DOCTYPE html>
     
      
 
-<form action="/create" method="POST" >
+<!--form action="/create" method="POST" -->
     
         <textarea name="content" class="form-control" rows="20"></textarea>
         <br />
@@ -42,9 +42,14 @@ const INDEX = `<!DOCTYPE html>
                 <option value="21600">15 j</option>
                 <option value="43200">30 j</option>
             </select>
-        <button type="submit" class="btn btn-default pull-right">Create</button>
+        <!--button type="submit" class="btn btn-default pull-right">Create</button-->
+        <input type="hidden" class="encryption-key" />
+        <input type="hidden" class="iv" />
+        <input type="hidden" class="ciphertext" />
+        <input class="encrypt-button" type="button" value="Encrypt and Send" />
+        <span class="link"></span>
         </div>
-</form>
+<!--/form-->
         </div>
         <div id="footer">
             <div class="container">
@@ -52,6 +57,7 @@ const INDEX = `<!DOCTYPE html>
             </div>
         </div>
     </body>
+    <script src="js/aes-gcm-encrypt.js"></script>
 </html>`
 
 const VIEW = `
@@ -84,7 +90,10 @@ const VIEW = `
     </div>
     <br />
             
-        <pre>{{ .Content}}</pre>
+        <input type="hidden" class="ciphertext-value" value="{{ .Content }}"/>
+        <textarea name="content" class="form-control" id="message" rows="20"></textarea>
+        <input type="hidden" class="encryption-key" value="{{ .Key }}"/>
+        <input type="hidden" class="iv" value="{{ .Iv }}"/>
         <br />
 
         </div>
@@ -95,5 +104,6 @@ const VIEW = `
             </div>
         </div>
     </body>
+    <script src="/js/aes-gcm-decrypt.js"></script>
 </html>
 `

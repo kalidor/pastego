@@ -24,13 +24,16 @@ type Page struct {
 	Url       string
 	TimeStart string
 	TimeStop  string
+	Iv		string
+	Key 	string
 }
 
 var (
-	Dir    *string
-	TmpDir string
-	Port   *int
-	Css    string
+	Dir    	*string
+	TmpDir 	string
+	Port   	*int
+	Css		string
+	Js		[2]string
 )
 
 func loadPaste(pasteid string) (*Page, error) {
@@ -38,10 +41,12 @@ func loadPaste(pasteid string) (*Page, error) {
 	if err != nil {
 		return nil, err
 	}
-	datas := strings.SplitN(string(content), "\n", 2)
+	datas := strings.SplitN(string(content), "\n", 4)
 	times := strings.SplitN(datas[0], "|", 2)
 	return &Page{
-		Content:   datas[1],
+		Iv: datas[1],
+		Key: datas[2],
+		Content:   datas[3],
 		Pasteid:   pasteid,
 		TimeStart: times[0],
 		TimeStop:  times[1],
@@ -89,14 +94,18 @@ func removePaste(paste string) {
 	}
 }
 
-func addPaste(body, pasteid string, eol int) {
+func addPaste(body, pasteid, iv, key string, eol int) {
 	fmt.Printf("addPaste called: %s - %s\n", pasteid, body)
 	tmpfn := filepath.Join(TmpDir, pasteid)
 	t := time.Now()
 	tf := t.Add(time.Duration(eol) * time.Minute)
-	body = fmt.Sprintf("%s|%s\n",
+	body = fmt.Sprintf("%s|%s\n%s\n%s\n%s",
 		t.Format("2006-01-02 15:03:00"),
-		tf.Format("2006-01-02 15:03:00")) + body
+		tf.Format("2006-01-02 15:03:00"),
+		iv,
+		key,
+		strings.ReplaceAll(body, " ", "+"),
+		)
 	err := ioutil.WriteFile(tmpfn, []byte(body), 0600)
 	if err != nil {
 		fmt.Println("Cannot write file.", err)
@@ -112,6 +121,8 @@ func addPaste(body, pasteid string, eol int) {
 
 func createHandler(w http.ResponseWriter, r *http.Request) {
 	body := r.FormValue("content")
+	iv := r.FormValue("iv")
+	key := r.FormValue("key")
 	if len(body) == 0 {
 		http.Redirect(w, r, "/", http.StatusFound)
 		return
@@ -122,7 +133,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	pasteid, _ := uuid.NewRandom()
 	go func() {
-		addPaste(body, pasteid.String(), eol)
+		addPaste(body, pasteid.String(), iv, key, eol)
 	}()
 	http.Redirect(w, r, "/view/"+pasteid.String(), http.StatusFound)
 }
@@ -131,6 +142,18 @@ func cssHandler(w http.ResponseWriter, r *http.Request) {
 	cssReader := strings.NewReader(Css)
 	w.Header().Set("Content-Type", "text/css; charset=utf-8")
 	io.Copy(w, cssReader)
+}
+func jsHandler(w http.ResponseWriter, r *http.Request) {
+	jsFile := r.URL.Path[len("/js/"):]
+	log.Println("Got JS", jsFile)
+	var JsReader *strings.Reader
+	if jsFile == "aes-gcm-encrypt.js" {
+		JsReader = strings.NewReader(Js[0])
+	} else {
+		JsReader = strings.NewReader(Js[1])
+	}
+	w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
+	io.Copy(w, JsReader)
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -144,6 +167,18 @@ func LoadCss() {
 	}
 	Css = string(css)
 }
+func LoadJs() {
+	js, err := ioutil.ReadFile("js/aes-gcm-encrypt.js")
+	if err != nil {
+		log.Println("Cannot read JSS file", err)
+	}
+	Js[0] = string(js)
+	js, err = ioutil.ReadFile("js/aes-gcm-decrypt.js")
+	if err != nil {
+		log.Println("Cannot read JSS file", err)
+	}
+	Js[1] = string(js)
+}
 
 func main() {
 	Dir = flag.String("dir", "/tmp/", "Directory where temporary dir will be created and received paste file")
@@ -153,6 +188,7 @@ func main() {
 	if err != nil {
 		log.Panic(err)
 	}
+	log.Println(tmpdir)
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
@@ -163,10 +199,12 @@ func main() {
 	}()
 	TmpDir = tmpdir
 	LoadCss()
+	LoadJs()
 	http.HandleFunc("/", handler)
 	http.HandleFunc("/view/", viewHandler)
 	http.HandleFunc("/raw/", rawHandler)
 	http.HandleFunc("/create", createHandler)
 	http.HandleFunc("/css/", cssHandler)
+	http.HandleFunc("/js/", jsHandler)
 	log.Panic(http.ListenAndServe(fmt.Sprintf(":%d", *Port), nil))
 }
