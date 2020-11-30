@@ -24,16 +24,16 @@ type Page struct {
 	Url       string
 	TimeStart string
 	TimeStop  string
-	Iv		string
-	Key 	string
+	Iv        string
+	Key       string
 }
 
 var (
-	Dir    	*string
-	TmpDir 	string
-	Port   	*int
-	Css		string
-	Js		[2]string
+	Dir    *string
+	TmpDir string
+	Port   *int
+	Css    string
+	Js     [2]string
 )
 
 func loadPaste(pasteid string) (*Page, error) {
@@ -44,8 +44,8 @@ func loadPaste(pasteid string) (*Page, error) {
 	datas := strings.SplitN(string(content), "\n", 4)
 	times := strings.SplitN(datas[0], "|", 2)
 	return &Page{
-		Iv: datas[1],
-		Key: datas[2],
+		Iv:        datas[1],
+		Key:       datas[2],
 		Content:   datas[3],
 		Pasteid:   pasteid,
 		TimeStart: times[0],
@@ -105,7 +105,7 @@ func addPaste(body, pasteid, iv, key string, eol int) {
 		iv,
 		key,
 		strings.ReplaceAll(body, " ", "+"),
-		)
+	)
 	err := ioutil.WriteFile(tmpfn, []byte(body), 0600)
 	if err != nil {
 		fmt.Println("Cannot write file.", err)
