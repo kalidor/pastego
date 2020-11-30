@@ -16,8 +16,9 @@
     let encoded = getMessageEncoding();
 
     let ciphertext = await window.crypto.subtle.encrypt({
-        name: "AES-GCM",
-        iv: iv
+        name: "AES-CTR",
+        counter: iv,
+        length: 64
       },
       key,
       encoded
@@ -68,7 +69,7 @@
   on the "Encrypt" and "Decrypt" buttons.
   */
   window.crypto.subtle.generateKey({
-      name: "AES-GCM",
+      name: "AES-CTR",
       length: 256,
     },
     true,
@@ -77,8 +78,7 @@
     const encryptButton = document.querySelector(".encrypt-button");
     exportCryptoKey(key);
     // The iv must never be reused with a given key.
-    let iv = window.crypto.getRandomValues(new Uint8Array(12));
-    iv = window.crypto.getRandomValues(new Uint8Array(12));
+    const iv = window.crypto.getRandomValues(new Uint8Array(16));
     var htmlIv = document.querySelector(".iv");
     htmlIv.innerText = window.btoa(iv.toString());
     encryptButton.addEventListener("click", () => {

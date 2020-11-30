@@ -29,8 +29,9 @@
     const ctStr = window.atob(messageBox.value).match(/[\s\S]/g);
     const ctUint8 = new Uint8Array(ctStr.map((char) => char.charCodeAt(0)));
     const decrypted = await window.crypto.subtle.decrypt({
-        name: "AES-GCM",
-        iv: _iv
+        name: "AES-CTR",
+        counter: _iv,
+        length: 64
       },
       mkey,
       ctUint8
@@ -46,7 +47,7 @@
     window.crypto.subtle.importKey(
         "jwk",
         JSON.parse(htmlKey),
-        "AES-GCM",
+        "AES-CTR",
         true,
         ["encrypt", "decrypt"]
       )
