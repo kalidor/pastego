@@ -21,10 +21,11 @@ const INDEX = `<!DOCTYPE html>
                 <a class="h1" href="/">PasteGo</a>
             </div>
             <p>New Paste:</p>
-    
+
         <textarea name="content" class="form-control" rows="20"></textarea>
         <br />
-        <div class="col-sm-5 pull-right">
+        <form action="/create">
+        <div class="col-sm-2 pull-right">
             <select name="eol" class="form-control" id="eol">
                 <option value="10">10 min</option>
                 <option value="30">30 min</option>
@@ -36,12 +37,14 @@ const INDEX = `<!DOCTYPE html>
                 <option value="21600">15 j</option>
                 <option value="43200">30 j</option>
             </select>
-        Password: <input type="text" class="password" placeholder="password" />
+            <input type="hidden" name="iv" id="iv" class="iv" />
+            <input type="hidden" name="ciphertext" id="ciphertext" class="ciphertext" />
+            Password: <input type="text" class="password" placeholder="password" />
+        </form>
         <input class="encrypt-button" type="button" value="Encrypt" />
         <span class="link"></span>
         </div>
-        <input type="hidden" class="iv" />
-        <input type="hidden" class="ciphertext" />
+
         </div>
         <div id="footer">
             <div class="container">
@@ -49,7 +52,7 @@ const INDEX = `<!DOCTYPE html>
             </div>
         </div>
     </body>
-    <script src="js/aes-gcm-encrypt.js"></script>
+    <script src="js/aes-ctr-encrypt.js"></script>
 </html>`
 
 const VIEW = `
@@ -92,6 +95,6 @@ const VIEW = `
             </div>
         </div>
     </body>
-    <script src="/js/aes-gcm-decrypt.js"></script>
+    <script src="/js/aes-ctr-decrypt.js"></script>
 </html>
 `

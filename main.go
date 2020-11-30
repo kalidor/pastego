@@ -118,7 +118,7 @@ func addPaste(body, pasteid, iv string, eol int) {
 }
 
 func createHandler(w http.ResponseWriter, r *http.Request) {
-	body := r.FormValue("content")
+	body := r.FormValue("ciphertext")
 	iv := r.FormValue("iv")
 	if len(body) == 0 {
 		http.Redirect(w, r, "/", http.StatusFound)
@@ -144,7 +144,7 @@ func jsHandler(w http.ResponseWriter, r *http.Request) {
 	jsFile := r.URL.Path[len("/js/"):]
 	log.Println("Got JS", jsFile)
 	var JsReader *strings.Reader
-	if jsFile == "aes-gcm-encrypt.js" {
+	if jsFile == "aes-ctr-encrypt.js" {
 		JsReader = strings.NewReader(Js[0])
 	} else {
 		JsReader = strings.NewReader(Js[1])
@@ -165,12 +165,12 @@ func LoadCss() {
 	Css = string(css)
 }
 func LoadJs() {
-	js, err := ioutil.ReadFile("js/aes-gcm-encrypt.js")
+	js, err := ioutil.ReadFile("js/aes-ctr-encrypt.js")
 	if err != nil {
 		log.Println("Cannot read JSS file", err)
 	}
 	Js[0] = string(js)
-	js, err = ioutil.ReadFile("js/aes-gcm-decrypt.js")
+	js, err = ioutil.ReadFile("js/aes-ctr-decrypt.js")
 	if err != nil {
 		log.Println("Cannot read JSS file", err)
 	}
