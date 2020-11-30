@@ -41,12 +41,11 @@ func loadPaste(pasteid string) (*Page, error) {
 	if err != nil {
 		return nil, err
 	}
-	datas := strings.SplitN(string(content), "\n", 4)
+	datas := strings.SplitN(string(content), "\n", 3)
 	times := strings.SplitN(datas[0], "|", 2)
 	return &Page{
 		Iv:        datas[1],
-		Key:       datas[2],
-		Content:   datas[3],
+		Content:   datas[2],
 		Pasteid:   pasteid,
 		TimeStart: times[0],
 		TimeStop:  times[1],
@@ -94,16 +93,15 @@ func removePaste(paste string) {
 	}
 }
 
-func addPaste(body, pasteid, iv, key string, eol int) {
+func addPaste(body, pasteid, iv string, eol int) {
 	fmt.Printf("addPaste called: %s - %s\n", pasteid, body)
 	tmpfn := filepath.Join(TmpDir, pasteid)
 	t := time.Now()
 	tf := t.Add(time.Duration(eol) * time.Minute)
-	body = fmt.Sprintf("%s|%s\n%s\n%s\n%s",
+	body = fmt.Sprintf("%s|%s\n%s\n%s",
 		t.Format("2006-01-02 15:03:00"),
 		tf.Format("2006-01-02 15:03:00"),
 		iv,
-		key,
 		strings.ReplaceAll(body, " ", "+"),
 	)
 	err := ioutil.WriteFile(tmpfn, []byte(body), 0600)
@@ -122,7 +120,6 @@ func addPaste(body, pasteid, iv, key string, eol int) {
 func createHandler(w http.ResponseWriter, r *http.Request) {
 	body := r.FormValue("content")
 	iv := r.FormValue("iv")
-	key := r.FormValue("key")
 	if len(body) == 0 {
 		http.Redirect(w, r, "/", http.StatusFound)
 		return
@@ -133,7 +130,7 @@ func createHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	pasteid, _ := uuid.NewRandom()
 	go func() {
-		addPaste(body, pasteid.String(), iv, key, eol)
+		addPaste(body, pasteid.String(), iv, eol)
 	}()
 	http.Redirect(w, r, "/view/"+pasteid.String(), http.StatusFound)
 }

@@ -12,11 +12,20 @@
   }
 
   /* Encrypt message */
-  async function encryptMessage(key, iv) {
+  async function encryptMessage() {
     let encoded = getMessageEncoding();
+    // The iv must never be reused with a given key.
+    const iv = window.crypto.getRandomValues(new Uint8Array(16));
+    var htmlIv = document.querySelector(".iv");
+    htmlIv.innerText = window.btoa(iv.toString());
+
+    const pwUtf8 = new TextEncoder().encode(document.querySelector(".password").innerTxt);  // encode password as UTF-8
+    const pwHash = await crypto.subtle.digest('SHA-256', pwUtf8);                           // hash the password
+    const alg = { name: 'AES-CTR'};
+    const key = await crypto.subtle.importKey('raw', pwHash, alg, false, ['encrypt']);      // use pw to generate key
 
     let ciphertext = await window.crypto.subtle.encrypt({
-        name: "AES-CTR",
+        name: 'AES-CTR',
         counter: iv,
         length: 64
       },
@@ -42,57 +51,16 @@
     xhr.onreadystatechange = function() { // Call a function when the state changes.
       if (this.readyState === XMLHttpRequest.DONE && this.status === 200) {
         var url = xhr.responseURL;
-        document.querySelector(".link").innerHTML = "Link: <a href='" + url + "'>link</a>";
+        document.querySelector(".link").innerHTML = "Link: <a href='" + url + "'>"+ url +"</a>";
       }
     }
     let _iv = document.querySelector(".iv").innerText;
-    let _key = document.querySelector(".encryption-key").innerText;
     let _eol = document.querySelector("#eol option:checked").value;
-    xhr.send("iv="+_iv+"&key="+_key+"&content="+ctBase64+"&eol="+_eol);
+    xhr.send("iv="+_iv+"&content="+ctBase64+"&eol="+_eol);
   }
-
-  /*
-  Export the given key and write it into the "exported-key" space.
-  */
-  async function exportCryptoKey(key) {
-    const exported = await window.crypto.subtle.exportKey(
-      "jwk",
-      key
-    );
-    const exportKeyOutput = document.querySelector(".encryption-key");
-    exportKeyOutput.textContent = window.btoa(JSON.stringify(exported, null, " "));
-    console.log(JSON.stringify(exported, null, " "));
-  }
-
-  /*
-  Generate an encryption key, then set up event listeners
-  on the "Encrypt" and "Decrypt" buttons.
-  */
-  window.crypto.subtle.generateKey({
-      name: "AES-CTR",
-      length: 256,
-    },
-    true,
-    ["encrypt", "decrypt"]
-  ).then((key) => {
-    const encryptButton = document.querySelector(".encrypt-button");
-    exportCryptoKey(key);
-    // The iv must never be reused with a given key.
-    const iv = window.crypto.getRandomValues(new Uint8Array(16));
-    var htmlIv = document.querySelector(".iv");
-    htmlIv.innerText = window.btoa(iv.toString());
+  const encryptButton = document.querySelector(".encrypt-button");
     encryptButton.addEventListener("click", () => {
-      encryptMessage(key, iv);
-    });
-    // Just for fun... Encrypt the message in case of update
-    // Since encryptMessage also send data... In case of use we have to create
-    // a dedicated function for sending message.
-    //document.querySelector('textarea').addEventListener('input', function (event) {
-    //  if (event.target.value.length != 0) {
-    //    encryptMessage(key, iv)
-    //  }
-    //});
-
+    encryptMessage();
   });
 
 })();

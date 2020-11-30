@@ -20,17 +20,11 @@ const INDEX = `<!DOCTYPE html>
             <div class="page-header">
                 <a class="h1" href="/">PasteGo</a>
             </div>
-            
-            
             <p>New Paste:</p>
-    
-     
-
-<!--form action="/create" method="POST" -->
     
         <textarea name="content" class="form-control" rows="20"></textarea>
         <br />
-        <div class="col-sm-2 pull-right">
+        <div class="col-sm-5 pull-right">
             <select name="eol" class="form-control" id="eol">
                 <option value="10">10 min</option>
                 <option value="30">30 min</option>
@@ -42,14 +36,12 @@ const INDEX = `<!DOCTYPE html>
                 <option value="21600">15 j</option>
                 <option value="43200">30 j</option>
             </select>
-        <!--button type="submit" class="btn btn-default pull-right">Create</button-->
-        <input type="hidden" class="encryption-key" />
-        <input type="hidden" class="iv" />
-        <input type="hidden" class="ciphertext" />
-        <input class="encrypt-button" type="button" value="Encrypt and Send" />
+        Password: <input type="text" class="password" placeholder="password" />
+        <input class="encrypt-button" type="button" value="Encrypt" />
         <span class="link"></span>
         </div>
-<!--/form-->
+        <input type="hidden" class="iv" />
+        <input type="hidden" class="ciphertext" />
         </div>
         <div id="footer">
             <div class="container">
@@ -89,15 +81,11 @@ const VIEW = `
         <div class="col-md-4"><strong>Raw </strong><a href="http://{{ .Url }}/raw/{{ .Pasteid }}">{{ .Pasteid }}</a></div>
     </div>
     <br />
-            
-        <input type="hidden" class="ciphertext-value" value="{{ .Content }}"/>
-        <textarea name="content" class="form-control" id="message" rows="20"></textarea>
-        <input type="hidden" class="encryption-key" value="{{ .Key }}"/>
-        <input type="hidden" class="iv" value="{{ .Iv }}"/>
-        <br />
-
+        <textarea name="content" class="form-control" id="message" rows="20">{{ .Content }}</textarea>
+        Password: <input type="text" class="password" placeholder="password"/>
+        <input class="decrypt-button" type="button" value="Decrypt" />
         </div>
-
+        <input type="hidden" class="iv" value="{{ .Iv }}"/>
         <div id="footer">
             <div class="container">
                 <p class="text-muted">Developed by gch - 2020</p>

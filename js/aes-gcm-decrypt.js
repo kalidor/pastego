@@ -15,49 +15,42 @@
   Fetch the ciphertext and decrypt it.
   Write the decrypted message into the "Decrypted" box.
   */
-  async function decryptMessage(mkey) {
+  async function decryptMessage() {
     var htmlIv = window.atob(document.querySelector(".iv").value);
     var myArray = htmlIv.split(",");
     for (var i = 0; i < myArray.length; i++) {
       myArray[i] = parseInt(myArray[i], 10);
     }
     const s = new Set(myArray);
-    let _iv = new Uint8Array(12);
+    let _iv = new Uint8Array(16);
     _iv = Uint8Array.from(s);
 
-    const messageBox = document.querySelector(".ciphertext-value");
+    const messageBox = document.querySelector("textarea");
     const ctStr = window.atob(messageBox.value).match(/[\s\S]/g);
     const ctUint8 = new Uint8Array(ctStr.map((char) => char.charCodeAt(0)));
+
+    const pwUtf8 = new TextEncoder().encode(document.querySelector(".password").innerTxt);  // encode password as UTF-8
+    const pwHash = await crypto.subtle.digest('SHA-256', pwUtf8);                           // hash the password
+    const alg = { name: 'AES-CTR'};
+    const key = await crypto.subtle.importKey('raw', pwHash, alg, false, ['decrypt']);      // use pw to generate key
+
     const decrypted = await window.crypto.subtle.decrypt({
         name: "AES-CTR",
         counter: _iv,
         length: 64
       },
-      mkey,
+      key,
       ctUint8
     );
-    await new Promise(r => setTimeout(r, 1000));
-      let dec = new TextDecoder();
-      const decryptedValue = document.querySelector("textarea");
-      decryptedValue.textContent = dec.decode(decrypted);
+    //await new Promise(r => setTimeout(r, 1000));
+    const clean = new TextDecoder().decode(decrypted);
+    const decryptedValue = document.querySelector("textarea");
+    decryptedValue.textContent = clean;
   }
-
-  function importSecretKey() {
-    var htmlKey = window.atob(document.querySelector(".encryption-key").value);
-    window.crypto.subtle.importKey(
-        "jwk",
-        JSON.parse(htmlKey),
-        "AES-CTR",
-        true,
-        ["encrypt", "decrypt"]
-      )
-      .then((mkey) => {
-        decryptMessage(mkey);
-      })
-      .catch(function (err) {
-        console.log(err);
-      })
-  };
-  importSecretKey();
+  const decryptButton = document.querySelector(".decrypt-button");
+  decryptButton.addEventListener("click", () => {
+    decryptMessage();
+  });
+  
 
 })();
