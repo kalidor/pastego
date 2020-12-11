@@ -97,10 +97,16 @@ func addPaste(body, pasteid, iv string, eol int) {
 	fmt.Printf("addPaste called: %s - %s\n", pasteid, body)
 	tmpfn := filepath.Join(TmpDir, pasteid)
 	t := time.Now()
+	t_body := fmt.Sprintf("%d/%02d/%02d %02d:%02d:%02d",
+		t.Year(), t.Month(), t.Day(),
+		t.Hour(), t.Minute(), t.Second())
 	tf := t.Add(time.Duration(eol) * time.Minute)
+	tf_body := fmt.Sprintf("%d/%02d/%02d %02d:%02d:%02d",
+		tf.Year(), tf.Month(), tf.Day(),
+		tf.Hour(), tf.Minute(), tf.Second())
 	body = fmt.Sprintf("%s|%s\n%s\n%s",
-		t.Format("2006-01-02 15:03:00"),
-		tf.Format("2006-01-02 15:03:00"),
+		t_body,
+		tf_body,
 		iv,
 		strings.ReplaceAll(body, " ", "+"),
 	)
